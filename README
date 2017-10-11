@@ -1,0 +1,14 @@
+Alemayehu Solomon Bogale
+CNetId: alemsolobog
+
+I made separate functions that handle the UDP and TCP cases. I didn't use threads
+so my client just sends text that is inputed into the terminal and my server just
+receives and outputs that text onto the terminal.
+
+For some reason the UDP doesn't work when I type use the text localhost but works
+when I put in 127.0.0.1. I was kind of confused on how we could test this other than
+own localhost.
+
+complied
+--------
+make snc
