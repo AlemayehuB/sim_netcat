@@ -45,7 +45,7 @@ int main(int argc, char *argv[])
           return -1;
         }
         else{
-        udp_client(argv[2],atoi(argv[3]));
+        client_udp(argv[2],atoi(argv[3]));
       }
       }
       else{

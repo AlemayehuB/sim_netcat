@@ -8,7 +8,11 @@ int client_connect(int listenfd);
 /*  Establishes a connection with the server
 is able to send data
 Uses TCP */
-int udp_client(char *host, int port);
+void* send_udp(void *thr_str);
+void* recv_udp(void *thr_str);
+
+
+int client_udp(char *host,int port);
 /*  Establishes a connection with the server
 is able to send data
 Uses UDP */

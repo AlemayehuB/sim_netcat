@@ -9,6 +9,7 @@
 #include <netinet/in.h>
 #include <sys/socket.h>
 #include <arpa/inet.h>
+#include<pthread.h>
 #define MAXLINE 4096
 
 int client_setup(char *host,char *port)
@@ -74,15 +75,66 @@ int client_setup(char *host,char *port)
     return 0;
     }
 
+//********************* UDP ************************************************
+struct thr_str{
+  int fd;
+  struct sockaddr_in serv;
+};
+void* send_udp(void *thr_str)
+{
+  char buffer[MAXLINE];
+  char *buf;
+  struct thr_str pair = *(struct thr_str*)thr_str;
+  int fd = pair.fd;
+  struct sockaddr_in serv = pair.serv;
 
-int udp_client(char *host,int port)
+  while(1)
+  {
+    buf = fgets(buffer, MAXLINE, stdin);
+    if (buf == NULL)
+      break;
+
+    //Send message
+    if(sendto(fd, buffer, strlen(buffer), 0, (struct sockaddr *)
+               &serv, sizeof(serv)) < 0)
+    {
+      perror("internal error");
+      return NULL;
+    }
+
+  }
+  return NULL;
+}
+
+void* recv_udp(void *thr_str)
+{
+  char buffer[MAXLINE];
+  struct thr_str pair = *(struct thr_str*)thr_str;
+  int fd = pair.fd;
+  struct sockaddr_in serv = pair.serv;
+  int len;
+  while (1) {
+    // receive from client
+    if(recvfrom(fd, buffer, sizeof(buffer), 0, (struct sockaddr *)&serv,(socklen_t *) &len)< 0)
+    {
+      perror("internal error");
+      exit(1);
+    }
+    //write onto the screen
+    write(1, buffer, strlen(buffer));
+  }
+  return NULL;
+}
+
+int client_udp(char *host,int port)
 {
   /* Establishes a connection using UDP
   */
+  //struct params par;
   struct sockaddr_in serv;
-  int listenfd, n;
-  char buffer[MAXLINE];
-  char *buf;
+  int listenfd, len;
+  struct thr_str pair;
+  pthread_t thread_id1,thread_id2;
 
   memset(&serv, 0, sizeof(serv));
 
@@ -91,28 +143,19 @@ int udp_client(char *host,int port)
     perror("internal error");
     exit(1);
   }
-
+  printf("establishing connection ...\n" );
+  //Send the message back to client
   serv.sin_family = AF_INET;
   serv.sin_addr.s_addr = inet_addr(host);
   serv.sin_port = htons(port);
-  printf("establishing connection ...\n" );
-    //Send the message back to client
-  while(1)
-  {
-    buf = fgets(buffer, MAXLINE, stdin);
-    if (buf == NULL)
-      break;
+  len = sizeof(serv);
+  pair.fd = listenfd;
+  pair.serv = serv;
+  //Sending & Receiving Data
+  if (pthread_create(&(thread_id1), NULL, &send_udp, (void*) &pair)<0)
+      printf("Can't connect :send");
+  if (pthread_create(&(thread_id2), NULL, &recv_udp, (void*) &pair)<0)
+      printf("Can't connect :Recv");
 
-    //Send message
-    n = sendto(listenfd , buffer, strlen(buffer), 0, (struct sockaddr *)
-               &serv, sizeof(serv));
-    if( n < 0)
-    {
-      perror("internal error");
-      return 1;
-    }
-
-  }
-  close(listenfd);
   return 0;
 }
